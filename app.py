@@ -257,9 +257,9 @@ elif pagina == "Relatório":
         c = canvas.Canvas(pdf_name, pagesize=A4)
         width, height = A4
 
-        # ==================================================
-        # PÁGINA 1 — RESUMO DO PROJETO (PARTE 1)
-        # ==================================================
+        # ============================
+        # PÁGINA 1 — RESUMO (PARTE 1)
+        # ============================
         cabecalho_pdf(c, width, height)
         titulo_pdf(c, "Resumo do Projeto", height - 3.5*cm, 20)
 
@@ -267,7 +267,7 @@ elif pagina == "Relatório":
         d = st.session_state.dados
 
         c.setFillColor(CINZA)
-        c.rect(2*cm, y - 6.5*cm, width - 4*cm, 6.2*cm, fill=1, stroke=0)
+        c.rect(2*cm, y - 6.8*cm, width - 4*cm, 6.5*cm, fill=1, stroke=0)
 
         texto_pdf(c, f"Simulado: {d.get('simulado','')}", y, 16)
         texto_pdf(c, f"Etapa: {d.get('etapa','')}", y - 0.9*cm, 16)
@@ -276,81 +276,87 @@ elif pagina == "Relatório":
         texto_pdf(c, f"Data de aplicação: {d.get('data','')}", y - 3.6*cm, 16)
         texto_pdf(c, f"Disciplinas: {', '.join(d.get('disciplinas', []))}", y - 4.5*cm, 16)
         texto_pdf(c, f"Redação: {d.get('redacao','')}", y - 5.4*cm, 16)
+        texto_pdf(c, f"Miolo: {d.get('miolo','')}", y - 6.3*cm, 16)
 
         c.showPage()
 
-        # ==================================================
-        # PÁGINA 2 — CHECKLIST TÉCNICO (PARTE 2)
-        # ==================================================
+        # ============================
+        # PÁGINA 2 — CHECKLIST TÉCNICO
+        # ============================
         cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Checklist Técnico", height - 3.5*cm)
+        titulo_pdf(c, "Checklist Técnico", height - 3.5*cm, 18)
 
         y = height - 5*cm
 
-        def bloco_checklist(titulo, itens, prefixo):
-            nonlocal y
-            titulo_pdf(c, titulo, y, 14)
-            y -= 1*cm
+        # --- CAPA ---
+        titulo_pdf(c, "CAPA", y, 14)
+        y -= 1*cm
 
-            for item in itens:
-                marcado = st.session_state.get(f"{prefixo}_{item}", False)
-                c.rect(2*cm, y - 0.2*cm, 0.4*cm, 0.4*cm)
-                if marcado:
-                    c.drawString(2.05*cm, y - 0.15*cm, "✔")
-                texto_pdf(c, item, y, 11)
-                y -= 0.7*cm
-                y = nova_pagina(c, y, height)
+        capa_itens = [
+            "Código de barras correto",
+            "Data de aplicação",
+            "Disciplinas",
+            "Nome do simulado",
+            "Prova",
+            "Volume",
+            "Cor da capa",
+            "Código da prova correto",
+            "Orientações de acordo",
+        ]
 
-            y -= 0.5*cm
+        for item in capa_itens:
+            marcado = st.session_state.get(f"capa_{item}", False)
+            c.rect(2*cm, y - 0.2*cm, 0.4*cm, 0.4*cm)
+            if marcado:
+                c.drawString(2.05*cm, y - 0.15*cm, "✔")
+            texto_pdf(c, item, y, 11)
+            y -= 0.7*cm
 
-        bloco_checklist(
-            "CAPA",
-            [
-                "Código de barras correto",
-                "Data de aplicação",
-                "Disciplinas",
-                "Nome do simulado",
-                "Prova",
-                "Volume",
-                "Cor da capa",
-                "Código da prova correto",
-                "Orientações de acordo",
-            ],
-            "capa",
-        )
+        y -= 0.8*cm
 
-        bloco_checklist(
-            "MIOLO / DIAGRAMAÇÃO",
-            [
-                "Paginação",
-                "Cabeçalho e rodapé",
-                "Arquivo múltiplo de 4",
-                "Arquivo em alta",
-                "Quantidade de questões",
-                "Numeração das questões",
-                "Código da questão oculto no PDF",
-                "Questões de duas colunas com linha divisória",
-                "Questões de uma coluna sem linha divisória",
-                "Folha de rascunho",
-                "Contracapa fechando a prova",
-            ],
-            "miolo",
-        )
+        # --- MIOLO ---
+        titulo_pdf(c, "MIOLO / DIAGRAMAÇÃO", y, 14)
+        y -= 1*cm
+
+        miolo_itens = [
+            "Paginação",
+            "Cabeçalho e rodapé",
+            "Arquivo múltiplo de 4",
+            "Arquivo em alta",
+            "Quantidade de questões",
+            "Numeração das questões",
+            "Código da questão oculto no PDF",
+            "Questões de duas colunas com linha divisória",
+            "Questões de uma coluna sem linha divisória",
+            "Folha de rascunho",
+            "Contracapa fechando a prova",
+        ]
+
+        for item in miolo_itens:
+            marcado = st.session_state.get(f"miolo_{item}", False)
+            c.rect(2*cm, y - 0.2*cm, 0.4*cm, 0.4*cm)
+            if marcado:
+                c.drawString(2.05*cm, y - 0.15*cm, "✔")
+            texto_pdf(c, item, y, 11)
+            y -= 0.7*cm
 
         c.showPage()
 
-        # ==================================================
-        # PARTE 3 — CONFERÊNCIA DE CONTEÚDO (3 COLUNAS)
-        # ==================================================
+        # ============================
+        # PÁGINA 3 — CONFERÊNCIA (3 COLUNAS)
+        # ============================
         cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Conferência de Conteúdo", height - 3.5*cm)
+        titulo_pdf(c, "Conferência de Conteúdo", height - 3.5*cm, 18)
 
         y = height - 5*cm
         col_x = [2*cm, width/3 + 0.5*cm, 2*width/3 + 0.5*cm]
         col = 0
 
-        for i in range(d.get("qtd", 0)):
-            numero = d.get("num_inicial", 1) + i
+        qtd = d.get("qtd", 0)
+        inicio = d.get("num_inicial", 1)
+
+        for i in range(qtd):
+            numero = inicio + i
             selecionados = st.session_state.get(f"conf_{numero}", [])
 
             if selecionados:
@@ -361,19 +367,19 @@ elif pagina == "Relatório":
                 c.setFillColor(PRETO)
                 c.setFont("Helvetica-Bold", 11)
                 c.drawString(x, y, f"Questão {numero}")
-                y -= 0.6*cm
 
+                y -= 0.6*cm
                 c.setFont("Helvetica", 9)
                 for s in selecionados:
                     c.drawString(x + 0.2*cm, y, f"- {s}")
                     y -= 0.35*cm
 
-                y -= 0.5*cm
+                y -= 0.6*cm
                 col += 1
 
                 if col == 3:
                     col = 0
-                    y -= 0.5*cm
+                    y -= 0.8*cm
 
                 if y < 3*cm:
                     c.showPage()
