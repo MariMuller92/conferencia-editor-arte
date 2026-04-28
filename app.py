@@ -257,39 +257,72 @@ elif pagina == "Relatório":
         c = canvas.Canvas(pdf_name, pagesize=A4)
         width, height = A4
 
-        # ============================
-        # PÁGINA 1 — RESUMO (PARTE 1)
-        # ============================
-        cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Resumo do Projeto", height - 3.5*cm, 20)
+        # ===============================
+        # FUNÇÕES AUXILIARES DE LAYOUT
+        # ===============================
+        def cabecalho():
+            # Tarja superior
+            c.setFillColor(AZUL)
+            c.rect(0, height - 1.2*cm, width, 0.3*cm, fill=1, stroke=0)
+
+            # Logo no canto superior direito
+            if os.path.exists(LOGO_PATH):
+                c.drawImage(
+                    LOGO_PATH,
+                    width - 6.8*cm,
+                    height - 2.2*cm,
+                    width=5.5*cm,
+                    preserveAspectRatio=True,
+                    mask="auto",
+                )
+
+            # Tarja inferior
+            c.rect(0, 0.8*cm, width, 0.25*cm, fill=1, stroke=0)
+
+        def titulo(texto, y, tamanho=18):
+            c.setFont("Helvetica-Bold", tamanho)
+            c.setFillColor(AZUL)
+            c.drawString(2*cm, y, texto)
+
+        def texto(texto, x, y, tamanho=11):
+            c.setFont("Helvetica", tamanho)
+            c.setFillColor(PRETO)
+            c.drawString(x, y, texto)
+
+        # ===============================
+        # PÁGINA 1 — RESUMO DO PROJETO
+        # ===============================
+        cabecalho()
+        titulo("Resumo do Projeto", height - 3.5*cm, 20)
 
         y = height - 5.2*cm
         d = st.session_state.dados
 
         c.setFillColor(CINZA)
-        c.rect(2*cm, y - 6.8*cm, width - 4*cm, 6.5*cm, fill=1, stroke=0)
+        c.rect(2*cm, y - 7*cm, width - 4*cm, 6.7*cm, fill=1, stroke=0)
 
-        texto_pdf(c, f"Simulado: {d.get('simulado','')}", y, 16)
-        texto_pdf(c, f"Etapa: {d.get('etapa','')}", y - 0.9*cm, 16)
-        texto_pdf(c, f"Prova: {d.get('prova','')}", y - 1.8*cm, 16)
-        texto_pdf(c, f"Volume: {d.get('volume','')}", y - 2.7*cm, 16)
-        texto_pdf(c, f"Data de aplicação: {d.get('data','')}", y - 3.6*cm, 16)
-        texto_pdf(c, f"Disciplinas: {', '.join(d.get('disciplinas', []))}", y - 4.5*cm, 16)
-        texto_pdf(c, f"Redação: {d.get('redacao','')}", y - 5.4*cm, 16)
-        texto_pdf(c, f"Miolo: {d.get('miolo','')}", y - 6.3*cm, 16)
+        texto(f"Simulado: {d.get('simulado','')}", 2.2*cm, y, 16)
+        texto(f"Etapa: {d.get('etapa','')}", 2.2*cm, y - 1*cm, 16)
+        texto(f"Prova: {d.get('prova','')}", 2.2*cm, y - 2*cm, 16)
+        texto(f"Volume: {d.get('volume','')}", 2.2*cm, y - 3*cm, 16)
+        texto(f"Data de aplicação: {d.get('data','')}", 2.2*cm, y - 4*cm, 16)
+        texto(f"Disciplinas: {', '.join(d.get('disciplinas', []))}", 2.2*cm, y - 5*cm, 16)
+        texto(f"Redação: {d.get('redacao','')}", 2.2*cm, y - 6*cm, 16)
 
         c.showPage()
 
-        # ============================
+        # ===============================
         # PÁGINA 2 — CHECKLIST TÉCNICO
-        # ============================
-        cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Checklist Técnico", height - 3.5*cm, 18)
+        # ===============================
+        cabecalho()
+        titulo("Checklist Técnico", height - 3.5*cm, 18)
 
         y = height - 5*cm
+        X_CHECK = 2*cm
+        X_TEXTO = 3*cm
 
         # --- CAPA ---
-        titulo_pdf(c, "CAPA", y, 14)
+        titulo("CAPA", y, 14)
         y -= 1*cm
 
         capa_itens = [
@@ -306,16 +339,17 @@ elif pagina == "Relatório":
 
         for item in capa_itens:
             marcado = st.session_state.get(f"capa_{item}", False)
-            c.rect(2*cm, y - 0.2*cm, 0.4*cm, 0.4*cm)
+            c.rect(X_CHECK, y - 0.25*cm, 0.45*cm, 0.45*cm)
             if marcado:
-                c.drawString(2.05*cm, y - 0.15*cm, "✔")
-            texto_pdf(c, item, y, 11)
-            y -= 0.7*cm
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(X_CHECK + 0.08*cm, y - 0.2*cm, "✔")
+            texto(item, X_TEXTO, y, 11)
+            y -= 0.75*cm
 
-        y -= 0.8*cm
+        y -= 1*cm
 
         # --- MIOLO ---
-        titulo_pdf(c, "MIOLO / DIAGRAMAÇÃO", y, 14)
+        titulo("MIOLO / DIAGRAMAÇÃO", y, 14)
         y -= 1*cm
 
         miolo_itens = [
@@ -334,19 +368,20 @@ elif pagina == "Relatório":
 
         for item in miolo_itens:
             marcado = st.session_state.get(f"miolo_{item}", False)
-            c.rect(2*cm, y - 0.2*cm, 0.4*cm, 0.4*cm)
+            c.rect(X_CHECK, y - 0.25*cm, 0.45*cm, 0.45*cm)
             if marcado:
-                c.drawString(2.05*cm, y - 0.15*cm, "✔")
-            texto_pdf(c, item, y, 11)
-            y -= 0.7*cm
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(X_CHECK + 0.08*cm, y - 0.2*cm, "✔")
+            texto(item, X_TEXTO, y, 11)
+            y -= 0.75*cm
 
         c.showPage()
 
-        # ============================
+        # ===============================
         # PÁGINA 3 — CONFERÊNCIA (3 COLUNAS)
-        # ============================
-        cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Conferência de Conteúdo", height - 3.5*cm, 18)
+        # ===============================
+        cabecalho()
+        titulo("Conferência de Conteúdo", height - 3.5*cm, 18)
 
         y = height - 5*cm
         col_x = [2*cm, width/3 + 0.5*cm, 2*width/3 + 0.5*cm]
@@ -363,7 +398,7 @@ elif pagina == "Relatório":
                 x = col_x[col]
 
                 c.setFillColor(AMARELO)
-                c.rect(x, y - 0.4*cm, width/3 - 2*cm, 0.8*cm, fill=1, stroke=0)
+                c.rect(x, y - 0.45*cm, width/3 - 2*cm, 0.8*cm, fill=1, stroke=0)
                 c.setFillColor(PRETO)
                 c.setFont("Helvetica-Bold", 11)
                 c.drawString(x, y, f"Questão {numero}")
@@ -374,7 +409,7 @@ elif pagina == "Relatório":
                     c.drawString(x + 0.2*cm, y, f"- {s}")
                     y -= 0.35*cm
 
-                y -= 0.6*cm
+                y -= 0.8*cm
                 col += 1
 
                 if col == 3:
@@ -383,13 +418,13 @@ elif pagina == "Relatório":
 
                 if y < 3*cm:
                     c.showPage()
-                    cabecalho_pdf(c, width, height)
+                    cabecalho()
                     y = height - 5*cm
                     col = 0
 
-        texto_pdf(
-            c,
+        texto(
             f"Documento gerado em {date.today().strftime('%d/%m/%Y')} — {nome_conferente}",
+            2*cm,
             1.5*cm,
             9,
         )
