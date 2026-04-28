@@ -235,4 +235,183 @@ elif pagina == "Parte 3 — Conferência de Conteúdo":
 # ==================================================
 elif pagina == "Relatório":
     st.header("📄 Relatório Final")
-    st.info("Geração de PDF estável e com layout institucional ✅")
+
+    nome_conferente = st.text_input("Nome de quem realizou a conferência")
+
+    if st.button("Gerar PDF"):
+        pdf_name = "relatorio_conferencia_editor_arte.pdf"
+        c = canvas.Canvas(pdf_name, pagesize=A4)
+        width, height = A4
+
+        # ===============================
+        # FUNÇÕES DE LAYOUT
+        # ===============================
+        def cabecalho():
+            c.setFillColor(AZUL)
+            c.rect(0, height - 1.2*cm, width, 0.35*cm, fill=1, stroke=0)
+            if os.path.exists(LOGO_PATH):
+                c.drawImage(
+                    LOGO_PATH,
+                    width - 6.8*cm,
+                    height - 2.2*cm,
+                    width=5.5*cm,
+                    preserveAspectRatio=True,
+                    mask="auto",
+                )
+            c.rect(0, 0.8*cm, width, 0.25*cm, fill=1, stroke=0)
+
+        def titulo(texto, y, tamanho=18):
+            c.setFont("Helvetica-Bold", tamanho)
+            c.setFillColor(AZUL)
+            c.drawString(2*cm, y, texto)
+
+        def texto(texto, x, y, tamanho=11):
+            c.setFont("Helvetica", tamanho)
+            c.setFillColor(PRETO)
+            c.drawString(x, y, texto)
+
+        # ===============================
+        # PÁGINA 1 — RESUMO DO PROJETO
+        # ===============================
+        cabecalho()
+        titulo("Resumo do Projeto", height - 3.5*cm, 20)
+
+        y = height - 5.4*cm
+        d = st.session_state.dados
+
+        c.setFillColor(CINZA)
+        c.rect(2*cm, y - 7*cm, width - 4*cm, 6.8*cm, fill=1, stroke=0)
+
+        texto(f"Simulado: {d['simulado']}", 2.3*cm, y, 16)
+        texto(f"Etapa: {d['etapa']}", 2.3*cm, y - 1*cm, 16)
+        texto(f"Prova: {d['prova']}", 2.3*cm, y - 2*cm, 16)
+        texto(f"Volume: {d['volume']}", 2.3*cm, y - 3*cm, 16)
+        texto(f"Data de aplicação: {d['data']}", 2.3*cm, y - 4*cm, 16)
+        texto(f"Disciplinas: {', '.join(d['disciplinas'])}", 2.3*cm, y - 5*cm, 16)
+        texto(f"Redação: {d['redacao']}", 2.3*cm, y - 6*cm, 16)
+
+        c.showPage()
+
+        # ===============================
+        # PÁGINA 2 — CHECKLIST TÉCNICO
+        # ===============================
+        cabecalho()
+        titulo("Checklist Técnico", height - 3.5*cm, 18)
+
+        y = height - 5*cm
+        X_CHECK = 2*cm
+        X_TEXTO = 3*cm
+
+        titulo("CAPA", y, 14)
+        y -= 1*cm
+
+        capa_itens = [
+            "Código de barras correto",
+            "Data de aplicação",
+            "Disciplinas",
+            "Nome do simulado",
+            "Prova",
+            "Volume",
+            "Cor da capa",
+            "Código da prova correto",
+            "Orientações de acordo",
+        ]
+
+        for item in capa_itens:
+            marcado = st.session_state.get(f"capa_{item}", False)
+            c.rect(X_CHECK, y - 0.25*cm, 0.45*cm, 0.45*cm)
+            if marcado:
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(X_CHECK + 0.1*cm, y - 0.18*cm, "✔")
+            texto(item, X_TEXTO, y, 11)
+            y -= 0.75*cm
+
+        y -= 1*cm
+        titulo("MIOLO / DIAGRAMAÇÃO", y, 14)
+        y -= 1*cm
+
+        miolo_itens = [
+            "Paginação",
+            "Cabeçalho e rodapé",
+            "Arquivo múltiplo de 4",
+            "Arquivo em alta",
+            "Quantidade de questões",
+            "Numeração das questões",
+            "Código da questão oculto no PDF",
+            "Questões de duas colunas com linha divisória",
+            "Questões de uma coluna sem linha divisória",
+            "Folha de rascunho",
+            "Contracapa fechando a prova",
+        ]
+
+        for item in miolo_itens:
+            marcado = st.session_state.get(f"miolo_{item}", False)
+            c.rect(X_CHECK, y - 0.25*cm, 0.45*cm, 0.45*cm)
+            if marcado:
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(X_CHECK + 0.1*cm, y - 0.18*cm, "✔")
+            texto(item, X_TEXTO, y, 11)
+            y -= 0.75*cm
+
+        c.showPage()
+
+        # ===============================
+        # PÁGINA 3 — CONFERÊNCIA (3 COLUNAS)
+        # ===============================
+        cabecalho()
+        titulo("Conferência de Conteúdo", height - 3.5*cm, 18)
+
+        y = height - 5*cm
+        col_x = [2*cm, width/3 + 0.4*cm, 2*width/3 + 0.4*cm]
+        col = 0
+
+        qtd = d["qtd"]
+        inicio = d["num_inicial"]
+
+        for i in range(qtd):
+            numero = inicio + i
+            selecionados = st.session_state.get(f"conf_{numero}", [])
+
+            if selecionados:
+                x = col_x[col]
+                c.setFillColor(AMARELO)
+                c.rect(x, y - 0.45*cm, (width/3) - 2*cm, 0.8*cm, fill=1, stroke=0)
+                c.setFillColor(PRETO)
+                c.setFont("Helvetica-Bold", 11)
+                c.drawString(x, y, f"Questão {numero}")
+
+                y -= 0.6*cm
+                c.setFont("Helvetica", 9)
+                for s in selecionados:
+                    c.drawString(x + 0.2*cm, y, f"- {s}")
+                    y -= 0.35*cm
+
+                y -= 0.8*cm
+                col += 1
+
+                if col == 3:
+                    col = 0
+                    y -= 0.8*cm
+
+                if y < 3*cm:
+                    c.showPage()
+                    cabecalho()
+                    y = height - 5*cm
+                    col = 0
+
+        texto(
+            f"Documento gerado em {date.today().strftime('%d/%m/%Y')} — {nome_conferente}",
+            2*cm,
+            1.5*cm,
+            9,
+        )
+
+        c.save()
+
+        with open(pdf_name, "rb") as f:
+            st.download_button(
+                "📥 Baixar relatório em PDF",
+                f,
+                file_name=pdf_name,
+                mime="application/pdf",
+            )
