@@ -257,64 +257,135 @@ elif pagina == "Relatório":
         c = canvas.Canvas(pdf_name, pagesize=A4)
         width, height = A4
 
-        # -------- RESUMO --------
+        # ==================================================
+        # PÁGINA 1 — RESUMO DO PROJETO (PARTE 1)
+        # ==================================================
         cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Resumo da Conferência", height - 3*cm)
+        titulo_pdf(c, "Resumo do Projeto", height - 3.5*cm, 20)
 
-        y = height - 4.5*cm
+        y = height - 5.2*cm
         d = st.session_state.dados
 
         c.setFillColor(CINZA)
-        c.rect(2*cm, y - 3.2*cm, width - 4*cm, 3*cm, fill=1, stroke=0)
+        c.rect(2*cm, y - 6.5*cm, width - 4*cm, 6.2*cm, fill=1, stroke=0)
 
-        texto_pdf(c, f"Simulado: {d.get('simulado','')}", y)
-        texto_pdf(c, f"Etapa: {d.get('etapa','')}", y - 0.5*cm)
-        texto_pdf(c, f"Prova: {d.get('prova','')}", y - 1*cm)
-        texto_pdf(c, f"Volume: {d.get('volume','')}", y - 1.5*cm)
-        texto_pdf(c, f"Data de aplicação: {d.get('data','')}", y - 2*cm)
-        texto_pdf(c, f"Disciplinas: {', '.join(d.get('disciplinas', []))}", y - 2.5*cm)
+        texto_pdf(c, f"Simulado: {d.get('simulado','')}", y, 16)
+        texto_pdf(c, f"Etapa: {d.get('etapa','')}", y - 0.9*cm, 16)
+        texto_pdf(c, f"Prova: {d.get('prova','')}", y - 1.8*cm, 16)
+        texto_pdf(c, f"Volume: {d.get('volume','')}", y - 2.7*cm, 16)
+        texto_pdf(c, f"Data de aplicação: {d.get('data','')}", y - 3.6*cm, 16)
+        texto_pdf(c, f"Disciplinas: {', '.join(d.get('disciplinas', []))}", y - 4.5*cm, 16)
+        texto_pdf(c, f"Redação: {d.get('redacao','')}", y - 5.4*cm, 16)
 
         c.showPage()
 
-        # -------- CONTEÚDO --------
+        # ==================================================
+        # PÁGINA 2 — CHECKLIST TÉCNICO (PARTE 2)
+        # ==================================================
         cabecalho_pdf(c, width, height)
-        titulo_pdf(c, "Conferência de Conteúdo", height - 3*cm)
-        y = height - 4.5*cm
+        titulo_pdf(c, "Checklist Técnico", height - 3.5*cm)
+
+        y = height - 5*cm
+
+        def bloco_checklist(titulo, itens, prefixo):
+            nonlocal y
+            titulo_pdf(c, titulo, y, 14)
+            y -= 1*cm
+
+            for item in itens:
+                marcado = st.session_state.get(f"{prefixo}_{item}", False)
+                c.rect(2*cm, y - 0.2*cm, 0.4*cm, 0.4*cm)
+                if marcado:
+                    c.drawString(2.05*cm, y - 0.15*cm, "✔")
+                texto_pdf(c, item, y, 11)
+                y -= 0.7*cm
+                y = nova_pagina(c, y, height)
+
+            y -= 0.5*cm
+
+        bloco_checklist(
+            "CAPA",
+            [
+                "Código de barras correto",
+                "Data de aplicação",
+                "Disciplinas",
+                "Nome do simulado",
+                "Prova",
+                "Volume",
+                "Cor da capa",
+                "Código da prova correto",
+                "Orientações de acordo",
+            ],
+            "capa",
+        )
+
+        bloco_checklist(
+            "MIOLO / DIAGRAMAÇÃO",
+            [
+                "Paginação",
+                "Cabeçalho e rodapé",
+                "Arquivo múltiplo de 4",
+                "Arquivo em alta",
+                "Quantidade de questões",
+                "Numeração das questões",
+                "Código da questão oculto no PDF",
+                "Questões de duas colunas com linha divisória",
+                "Questões de uma coluna sem linha divisória",
+                "Folha de rascunho",
+                "Contracapa fechando a prova",
+            ],
+            "miolo",
+        )
+
+        c.showPage()
+
+        # ==================================================
+        # PARTE 3 — CONFERÊNCIA DE CONTEÚDO (3 COLUNAS)
+        # ==================================================
+        cabecalho_pdf(c, width, height)
+        titulo_pdf(c, "Conferência de Conteúdo", height - 3.5*cm)
+
+        y = height - 5*cm
+        col_x = [2*cm, width/3 + 0.5*cm, 2*width/3 + 0.5*cm]
+        col = 0
 
         for i in range(d.get("qtd", 0)):
             numero = d.get("num_inicial", 1) + i
             selecionados = st.session_state.get(f"conf_{numero}", [])
 
             if selecionados:
+                x = col_x[col]
+
                 c.setFillColor(AMARELO)
-                c.rect(2*cm, y - 0.3*cm, width - 4*cm, 0.7*cm, fill=1, stroke=0)
+                c.rect(x, y - 0.4*cm, width/3 - 2*cm, 0.8*cm, fill=1, stroke=0)
+                c.setFillColor(PRETO)
+                c.setFont("Helvetica-Bold", 11)
+                c.drawString(x, y, f"Questão {numero}")
+                y -= 0.6*cm
 
-                texto_pdf(c, f"Questão {numero}", y)
-                y -= 0.8*cm
-
+                c.setFont("Helvetica", 9)
                 for s in selecionados:
-                    texto_pdf(c, f"- {s}", y)
-                    y -= 0.4*cm
+                    c.drawString(x + 0.2*cm, y, f"- {s}")
+                    y -= 0.35*cm
 
-                texto_pdf(
-                    c,
-                    f"Corrigido: {st.session_state.get(f'corrigido_{numero}','Não')}",
-                    y,
-                )
-                y -= 0.4*cm
+                y -= 0.5*cm
+                col += 1
 
-                desc = st.session_state.get(f"desc_{numero}", "")
-                if desc:
-                    texto_pdf(c, f"O que foi feito: {desc}", y)
-                    y -= 0.6*cm
+                if col == 3:
+                    col = 0
+                    y -= 0.5*cm
 
-                y = nova_pagina(c, y, height)
+                if y < 3*cm:
+                    c.showPage()
+                    cabecalho_pdf(c, width, height)
+                    y = height - 5*cm
+                    col = 0
 
         texto_pdf(
             c,
-            f"Documento gerado em {date.today().strftime('%d/%m/%Y')} por {nome_conferente}",
+            f"Documento gerado em {date.today().strftime('%d/%m/%Y')} — {nome_conferente}",
             1.5*cm,
-            size=9,
+            9,
         )
 
         c.save()
