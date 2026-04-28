@@ -43,8 +43,8 @@ def cabecalho_pdf(c, width, height):
     # tarja inferior fina
     c.rect(0, 0.6*cm, width, 0.3*cm, fill=1, stroke=0)
 
-def titulo_pdf(c, texto, y):
-    c.setFont("Helvetica-Bold", 16)
+def titulo_pdf(c, texto, y, tamanho=18):
+    c.setFont("Helvetica-Bold", tamanho)
     c.setFillColor(AZUL)
     c.drawString(2*cm, y, texto)
 
