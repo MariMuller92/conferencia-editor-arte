@@ -75,7 +75,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
     nome_simulado = st.text_input("Nome do Simulado")
-    etapa = st.selectbox("Etapa", ["PAS 1", "PAS 2", "PAS 3"])
+    etapa = st.text_input("Etapa")
     volume = st.text_input("Volume")
     prova = st.text_input("Prova")
 
