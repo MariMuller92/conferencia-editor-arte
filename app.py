@@ -27,17 +27,17 @@ LOGO_PATH = "logo_bernoulli.png"
 def cabecalho_pdf(c, width, height):
     # tarja superior fina
     c.setFillColor(AZUL)
-    c.rect(0, height - 1*cm, width, 0.4*cm, fill=1, stroke=0)
+    c.rect(0, height - 1*cm, width, 0.35*cm, fill=1, stroke=0)
 
     # logo no canto superior direito
     if os.path.exists(LOGO_PATH):
         c.drawImage(
             LOGO_PATH,
             width - 6.5*cm,
-            height - 1.9*cm,
+            height - 1.8*cm,
             width=5.5*cm,
             preserveAspectRatio=True,
-            mask="auto"
+            mask="auto",
         )
 
     # tarja inferior fina
@@ -61,7 +61,7 @@ def nova_pagina(c, y, height):
     return y
 
 # ==================================================
-# INICIALIZAÇÃO DE ESTADO
+# ESTADO GLOBAL
 # ==================================================
 if "dados" not in st.session_state:
     st.session_state.dados = {}
@@ -96,12 +96,22 @@ if pagina == "Parte 1 — Cadastro":
         st.session_state.dados["simulado"] = st.text_input("Nome do Simulado")
         st.session_state.dados["etapa"] = st.text_input("Etapa")
         st.session_state.dados["volume"] = st.text_input("Volume")
+        st.session_state.dados["prova"] = st.text_input("Prova")
 
     with col2:
         data = st.date_input("Data de aplicação")
         st.session_state.dados["data"] = data.strftime("%d/%m/%Y")
+
+        st.session_state.dados["num_inicial"] = st.number_input(
+            "Numeração inicial das questões",
+            min_value=1,
+            step=1,
+        )
+
         st.session_state.dados["qtd"] = st.number_input(
-            "Quantidade de questões", min_value=1, step=1
+            "Quantidade de questões",
+            min_value=1,
+            step=1,
         )
 
     with col3:
@@ -114,6 +124,20 @@ if pagina == "Parte 1 — Cadastro":
                 "Língua Portuguesa",
                 "Matemática",
             ],
+        )
+
+        st.session_state.dados["redacao"] = st.radio(
+            "Tem redação?",
+            ["Sim", "Não"],
+        )
+
+        st.session_state.dados["codigo_barras"] = st.text_input(
+            "Código de barras"
+        )
+
+        st.session_state.dados["miolo"] = st.radio(
+            "Miolo",
+            ["Preto e Branco", "Colorido"],
         )
 
     st.success("✅ Dados salvos automaticamente")
@@ -130,6 +154,7 @@ elif pagina == "Parte 2 — Checklist Técnico":
         "Data de aplicação",
         "Disciplinas",
         "Nome do simulado",
+        "Prova",
         "Volume",
         "Cor da capa",
         "Código da prova correto",
@@ -174,6 +199,7 @@ elif pagina == "Parte 3 — Conferência de Conteúdo":
     st.header("🧠 Conferência de Conteúdo")
 
     qtd = st.session_state.dados.get("qtd", 0)
+    inicio = st.session_state.dados.get("num_inicial", 1)
 
     itens_conferencia = [
         "Fragmentação",
@@ -189,15 +215,19 @@ elif pagina == "Parte 3 — Conferência de Conteúdo":
         "Padrões química",
     ]
 
-    for n in range(1, int(qtd) + 1):
-        st.subheader(f"Questão {n}")
+    for i in range(qtd):
+        numero = inicio + i
+        st.subheader(f"Questão {numero}")
 
         colA, colB = st.columns([3, 2])
 
         with colA:
             st.markdown("**Conferência**")
-            for item in itens_conferencia:
-                st.checkbox(item, key=f"q{n}_{item}")
+            st.multiselect(
+                "Itens conferidos",
+                itens_conferencia,
+                key=f"conf_{numero}",
+            )
 
         with colB:
             st.markdown("**Correção**")
@@ -205,9 +235,12 @@ elif pagina == "Parte 3 — Conferência de Conteúdo":
                 "Houve correção?",
                 ["Não", "Sim"],
                 horizontal=True,
-                key=f"corrigido_{n}",
+                key=f"corrigido_{numero}",
             )
-            st.text_area("O que foi feito", key=f"desc_{n}")
+            st.text_area(
+                "O que foi feito",
+                key=f"desc_{numero}",
+            )
 
         st.markdown("---")
 
@@ -224,54 +257,53 @@ elif pagina == "Relatório":
         c = canvas.Canvas(pdf_name, pagesize=A4)
         width, height = A4
 
-        # -------- CAPA / RESUMO --------
+        # -------- RESUMO --------
         cabecalho_pdf(c, width, height)
         titulo_pdf(c, "Resumo da Conferência", height - 3*cm)
 
         y = height - 4.5*cm
-        dados = st.session_state.dados
+        d = st.session_state.dados
 
         c.setFillColor(CINZA)
-        c.rect(2*cm, y - 2.5*cm, width - 4*cm, 2.2*cm, fill=1, stroke=0)
+        c.rect(2*cm, y - 3.2*cm, width - 4*cm, 3*cm, fill=1, stroke=0)
 
-        texto_pdf(c, f"Simulado: {dados.get('simulado','')}", y)
-        texto_pdf(c, f"Etapa: {dados.get('etapa','')}", y - 0.5*cm)
-        texto_pdf(c, f"Volume: {dados.get('volume','')}", y - 1*cm)
-        texto_pdf(c, f"Data de aplicação: {dados.get('data','')}", y - 1.5*cm)
-        texto_pdf(c, f"Disciplinas: {', '.join(dados.get('disciplinas', []))}", y - 2*cm)
+        texto_pdf(c, f"Simulado: {d.get('simulado','')}", y)
+        texto_pdf(c, f"Etapa: {d.get('etapa','')}", y - 0.5*cm)
+        texto_pdf(c, f"Prova: {d.get('prova','')}", y - 1*cm)
+        texto_pdf(c, f"Volume: {d.get('volume','')}", y - 1.5*cm)
+        texto_pdf(c, f"Data de aplicação: {d.get('data','')}", y - 2*cm)
+        texto_pdf(c, f"Disciplinas: {', '.join(d.get('disciplinas', []))}", y - 2.5*cm)
 
         c.showPage()
 
-        # -------- CONFERÊNCIA DE CONTEÚDO --------
+        # -------- CONTEÚDO --------
         cabecalho_pdf(c, width, height)
         titulo_pdf(c, "Conferência de Conteúdo", height - 3*cm)
-
         y = height - 4.5*cm
 
-        for n in range(1, int(dados.get("qtd", 0)) + 1):
-            selecionados = [
-                item
-                for item in itens_conferencia
-                if st.session_state.get(f"q{n}_{item}", False)
-            ]
+        for i in range(d.get("qtd", 0)):
+            numero = d.get("num_inicial", 1) + i
+            selecionados = st.session_state.get(f"conf_{numero}", [])
 
             if selecionados:
                 c.setFillColor(AMARELO)
                 c.rect(2*cm, y - 0.3*cm, width - 4*cm, 0.7*cm, fill=1, stroke=0)
 
-                c.setFillColor(PRETO)
-                texto_pdf(c, f"Questão {n}", y)
-
+                texto_pdf(c, f"Questão {numero}", y)
                 y -= 0.8*cm
+
                 for s in selecionados:
                     texto_pdf(c, f"- {s}", y)
                     y -= 0.4*cm
 
-                corrigido = st.session_state.get(f"corrigido_{n}", "Não")
-                desc = st.session_state.get(f"desc_{n}", "")
-
-                texto_pdf(c, f"Corrigido: {corrigido}", y)
+                texto_pdf(
+                    c,
+                    f"Corrigido: {st.session_state.get(f'corrigido_{numero}','Não')}",
+                    y,
+                )
                 y -= 0.4*cm
+
+                desc = st.session_state.get(f"desc_{numero}", "")
                 if desc:
                     texto_pdf(c, f"O que foi feito: {desc}", y)
                     y -= 0.6*cm
