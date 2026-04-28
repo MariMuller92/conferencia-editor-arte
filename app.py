@@ -6,246 +6,291 @@ from reportlab.lib.units import cm
 from datetime import date
 import os
 
-# ==========================
-# CONFIG STREAMLIT
-# ==========================
+# ==================================================
+# CONFIGURAÇÃO GERAL
+# ==================================================
 st.set_page_config(
     page_title="Conferência Editor de Arte",
-    layout="wide"
+    layout="wide",
 )
 
-# ==========================
-# CORES INSTITUCIONAIS
-# ==========================
 AZUL = HexColor("#1B2D6B")
-VERDE = HexColor("#00A98F")
+AMARELO = HexColor("#FFF3B0")
 CINZA = HexColor("#F2F2F2")
 PRETO = HexColor("#000000")
 
 LOGO_PATH = "logo_bernoulli.png"
 
-# ==========================
+# ==================================================
 # FUNÇÕES PDF
-# ==========================
+# ==================================================
 def cabecalho_pdf(c, width, height):
+    # tarja superior fina
     c.setFillColor(AZUL)
-    c.rect(0, height - 3*cm, width, 3*cm, fill=1, stroke=0)
+    c.rect(0, height - 1*cm, width, 0.4*cm, fill=1, stroke=0)
 
+    # logo no canto superior direito
     if os.path.exists(LOGO_PATH):
         c.drawImage(
             LOGO_PATH,
-            1.5*cm,
-            height - 2.4*cm,
-            width=6*cm,
+            width - 6.5*cm,
+            height - 1.9*cm,
+            width=5.5*cm,
             preserveAspectRatio=True,
             mask="auto"
         )
+
+    # tarja inferior fina
+    c.rect(0, 0.6*cm, width, 0.3*cm, fill=1, stroke=0)
 
 def titulo_pdf(c, texto, y):
     c.setFont("Helvetica-Bold", 16)
     c.setFillColor(AZUL)
     c.drawString(2*cm, y, texto)
 
-def subtitulo_pdf(c, texto, y):
-    c.setFont("Helvetica-Bold", 12)
-    c.setFillColor(VERDE)
-    c.drawString(2*cm, y, texto)
-
-def texto_pdf(c, texto, y, tamanho=10):
-    c.setFont("Helvetica", tamanho)
+def texto_pdf(c, texto, y, size=10):
+    c.setFont("Helvetica", size)
     c.setFillColor(PRETO)
     c.drawString(2.2*cm, y, texto)
 
-def nova_pagina_se_preciso(c, y, height):
+def nova_pagina(c, y, height):
     if y < 3*cm:
         c.showPage()
         cabecalho_pdf(c, width, height)
-        return height - 4*cm
+        return height - 3*cm
     return y
 
-# ==========================
-# APP
-# ==========================
+# ==================================================
+# INICIALIZAÇÃO DE ESTADO
+# ==================================================
+if "dados" not in st.session_state:
+    st.session_state.dados = {}
+
+# ==================================================
+# TÍTULO
+# ==================================================
 st.title("📘 Conferência Editor de Arte")
 
-# ---------- PARTE 1 ----------
-st.header("🔰 Parte 1 — Cadastro do Projeto")
+# ==================================================
+# NAVEGAÇÃO
+# ==================================================
+pagina = st.sidebar.radio(
+    "Etapas da Conferência",
+    [
+        "Parte 1 — Cadastro",
+        "Parte 2 — Checklist Técnico",
+        "Parte 3 — Conferência de Conteúdo",
+        "Relatório",
+    ],
+)
 
-col1, col2, col3 = st.columns(3)
+# ==================================================
+# PARTE 1 — CADASTRO
+# ==================================================
+if pagina == "Parte 1 — Cadastro":
+    st.header("🔰 Cadastro do Projeto")
 
-with col1:
-    nome_simulado = st.text_input("Nome do Simulado")
-    etapa = st.text_input("Etapa")
-    volume = st.text_input("Volume")
-    prova = st.text_input("Prova")
+    col1, col2, col3 = st.columns(3)
 
-with col2:
-    data_aplicacao = st.date_input("Data de aplicação")
-    qtd_questoes = st.number_input("Quantidade de questões", min_value=1, step=1)
-    disciplinas = st.text_input("Disciplinas")
+    with col1:
+        st.session_state.dados["simulado"] = st.text_input("Nome do Simulado")
+        st.session_state.dados["etapa"] = st.text_input("Etapa")
+        st.session_state.dados["volume"] = st.text_input("Volume")
 
-with col3:
-    inicio_numeracao = st.number_input("Numeração das questões começa em", min_value=1, step=1)
-    tem_redacao = st.radio("Tem redação?", ["Sim", "Não"])
-    codigo_barras = st.text_input("Código de barras")
-    miolo_cor = st.radio("Miolo", ["Preto e Branco", "Colorido"])
+    with col2:
+        data = st.date_input("Data de aplicação")
+        st.session_state.dados["data"] = data.strftime("%d/%m/%Y")
+        st.session_state.dados["qtd"] = st.number_input(
+            "Quantidade de questões", min_value=1, step=1
+        )
 
-# ---------- PARTE 2 ----------
-st.header("✅ Parte 2 — Checklist Técnico")
+    with col3:
+        st.session_state.dados["disciplinas"] = st.multiselect(
+            "Disciplinas",
+            [
+                "Ciências Humanas",
+                "Ciências da Natureza",
+                "Língua Estrangeira",
+                "Língua Portuguesa",
+                "Matemática",
+            ],
+        )
 
-checklist = {
-    "Capa": [
+    st.success("✅ Dados salvos automaticamente")
+
+# ==================================================
+# PARTE 2 — CHECKLIST TÉCNICO
+# ==================================================
+elif pagina == "Parte 2 — Checklist Técnico":
+    st.header("✅ Checklist Técnico")
+
+    st.subheader("CAPA")
+    capa = [
         "Código de barras correto",
         "Data de aplicação",
-        "Disciplina",
+        "Disciplinas",
         "Nome do simulado",
-        "Volume de aplicação",
+        "Volume",
         "Cor da capa",
         "Código da prova correto",
         "Orientações de acordo",
-    ],
-    "Miolo / Diagramação": [
+    ]
+
+    for item in capa:
+        col1, col2 = st.columns([1, 6])
+        with col1:
+            st.checkbox("", key=f"capa_{item}")
+        with col2:
+            st.text_input(item, key=f"corr_capa_{item}")
+
+    st.divider()
+
+    st.subheader("MIOLO / DIAGRAMAÇÃO")
+    miolo = [
         "Paginação",
         "Cabeçalho e rodapé",
         "Arquivo múltiplo de 4",
-        "Arquivo em alta com marca de corte",
+        "Arquivo em alta",
         "Quantidade de questões",
         "Numeração das questões",
         "Código da questão oculto no PDF",
         "Questões de duas colunas com linha divisória",
         "Questões de uma coluna sem linha divisória",
-        "Folha de rascunho da redação",
+        "Folha de rascunho",
         "Contracapa fechando a prova",
     ]
-}
 
-checklist_resultados = []
+    for item in miolo:
+        col1, col2 = st.columns([1, 6])
+        with col1:
+            st.checkbox("", key=f"miolo_{item}")
+        with col2:
+            st.text_input(item, key=f"corr_miolo_{item}")
 
-for bloco, itens in checklist.items():
-    st.subheader(bloco)
-    for item in itens:
-        if item == "Folha de rascunho da redação" and tem_redacao == "Não":
-            continue
+# ==================================================
+# PARTE 3 — CONFERÊNCIA DE CONTEÚDO
+# ==================================================
+elif pagina == "Parte 3 — Conferência de Conteúdo":
+    st.header("🧠 Conferência de Conteúdo")
 
-        c1, c2, c3 = st.columns([1, 4, 6])
-        with c1:
-            ok = st.checkbox("", key=f"{bloco}-{item}")
-        with c2:
-            st.write(item)
-        with c3:
-            correcao = st.text_input("Correção", key=f"corr-{bloco}-{item}")
+    qtd = st.session_state.dados.get("qtd", 0)
 
-        checklist_resultados.append((bloco, item, ok, correcao))
-
-# ---------- PARTE 3 ----------
-st.header("🧠 Parte 3 — Conferência de Conteúdo")
-
-itens_conteudo = [
-    "Fragmentação",
-    "Viúva",
-    "Bplay",
-    "Referência",
-    "Alternativas (A–E)",
-    "Ponto final",
-    "Imagem legível e em boa qualidade",
-    "Poema centralizado e justificado à esquerda",
-    "Música centralizada",
-    "Expressões MathType corretas",
-    "Padrões de química",
-]
-
-conferencias = []
-
-for i in range(int(qtd_questoes)):
-    numero = inicio_numeracao + i
-    with st.expander(f"Questão {numero}"):
-        marcados = [item for item in itens_conteudo if st.checkbox(item, key=f"{numero}-{item}")]
-        corrigido = st.radio("Corrigido?", ["Sim", "Não"], key=f"corrigido-{numero}")
-        descricao = st.text_area("O que foi feito", key=f"desc-{numero}")
-
-        conferencias.append((numero, marcados, corrigido, descricao))
-
-# ---------- PDF ----------
-st.header("📄 Gerar Relatório")
-nome_conferente = st.text_input("Nome de quem realizou a conferência")
-
-if st.button("Gerar PDF"):
-    pdf_name = "relatorio_conferencia_editor_arte.pdf"
-    c = canvas.Canvas(pdf_name, pagesize=A4)
-    width, height = A4
-
-    # CAPA
-    cabecalho_pdf(c, width, height)
-
-    c.setFont("Helvetica-Bold", 22)
-    c.setFillColor(AZUL)
-    c.drawString(2*cm, height - 5*cm, "Relatório de Conferência")
-
-    y = height - 7*cm
-    dados = [
-        f"Simulado: {nome_simulado}",
-        f"Etapa: {etapa}",
-        f"Volume: {volume}",
-        f"Prova: {prova}",
-        f"Disciplinas: {disciplinas}",
-        f"Data de aplicação: {data_aplicacao}",
-        f"Quantidade de questões: {qtd_questoes}",
-        f"Numeração inicial: {inicio_numeracao}",
-        f"Redação: {tem_redacao}",
-        f"Código de barras: {codigo_barras}",
-        f"Miolo: {miolo_cor}",
-        f"Emitido em: {date.today()}",
-        f"Conferente: {nome_conferente}",
+    itens_conferencia = [
+        "Fragmentação",
+        "Viúva",
+        "Bplay",
+        "Referência",
+        "Alternativas (A–E)",
+        "Ponto final",
+        "Imagem legível e em boa qualidade",
+        "Poema centralizado e justificado à esquerda",
+        "Música centralizada",
+        "Expressões math type corretas",
+        "Padrões química",
     ]
 
-    for d in dados:
-        texto_pdf(c, d, y)
-        y -= 0.6*cm
+    for n in range(1, int(qtd) + 1):
+        st.subheader(f"Questão {n}")
 
-    c.showPage()
+        colA, colB = st.columns([3, 2])
 
-    # CHECKLIST
-    cabecalho_pdf(c, width, height)
-    titulo_pdf(c, "Checklist Técnico", height - 4.5*cm)
-    y = height - 6*cm
+        with colA:
+            st.markdown("**Conferência**")
+            for item in itens_conferencia:
+                st.checkbox(item, key=f"q{n}_{item}")
 
-    for bloco, item, ok, correcao in checklist_resultados:
-        if ok:
-            c.setFillColor(CINZA)
-            c.rect(2*cm, y - 0.3*cm, width - 4*cm, 0.8*cm, fill=1, stroke=0)
-            c.setFont("Helvetica-Bold", 10)
-            c.setFillColor(AZUL)
-            c.drawString(2.2*cm, y, f"{bloco} — {item}")
-            c.setFont("Helvetica", 9)
-            c.drawString(11*cm, y, correcao)
-            y -= 1*cm
-            y = nova_pagina_se_preciso(c, y, height)
+        with colB:
+            st.markdown("**Correção**")
+            st.radio(
+                "Houve correção?",
+                ["Não", "Sim"],
+                horizontal=True,
+                key=f"corrigido_{n}",
+            )
+            st.text_area("O que foi feito", key=f"desc_{n}")
 
-    c.showPage()
+        st.markdown("---")
 
-    # CONTEÚDO
-    cabecalho_pdf(c, width, height)
-    titulo_pdf(c, "Conferência de Conteúdo", height - 4.5*cm)
-    y = height - 6*cm
+# ==================================================
+# RELATÓRIO — PDF
+# ==================================================
+elif pagina == "Relatório":
+    st.header("📄 Relatório Final")
 
-    for numero, itens, corrigido, descricao in conferencias:
-        if itens or corrigido == "Sim":
-            subtitulo_pdf(c, f"Questão {numero}", y)
-            y -= 0.6*cm
-            for i in itens:
-                texto_pdf(c, f"- {i}", y)
+    nome_conferente = st.text_input("Nome de quem realizou a conferência")
+
+    if st.button("Gerar PDF"):
+        pdf_name = "relatorio_conferencia_editor_arte.pdf"
+        c = canvas.Canvas(pdf_name, pagesize=A4)
+        width, height = A4
+
+        # -------- CAPA / RESUMO --------
+        cabecalho_pdf(c, width, height)
+        titulo_pdf(c, "Resumo da Conferência", height - 3*cm)
+
+        y = height - 4.5*cm
+        dados = st.session_state.dados
+
+        c.setFillColor(CINZA)
+        c.rect(2*cm, y - 2.5*cm, width - 4*cm, 2.2*cm, fill=1, stroke=0)
+
+        texto_pdf(c, f"Simulado: {dados.get('simulado','')}", y)
+        texto_pdf(c, f"Etapa: {dados.get('etapa','')}", y - 0.5*cm)
+        texto_pdf(c, f"Volume: {dados.get('volume','')}", y - 1*cm)
+        texto_pdf(c, f"Data de aplicação: {dados.get('data','')}", y - 1.5*cm)
+        texto_pdf(c, f"Disciplinas: {', '.join(dados.get('disciplinas', []))}", y - 2*cm)
+
+        c.showPage()
+
+        # -------- CONFERÊNCIA DE CONTEÚDO --------
+        cabecalho_pdf(c, width, height)
+        titulo_pdf(c, "Conferência de Conteúdo", height - 3*cm)
+
+        y = height - 4.5*cm
+
+        for n in range(1, int(dados.get("qtd", 0)) + 1):
+            selecionados = [
+                item
+                for item in itens_conferencia
+                if st.session_state.get(f"q{n}_{item}", False)
+            ]
+
+            if selecionados:
+                c.setFillColor(AMARELO)
+                c.rect(2*cm, y - 0.3*cm, width - 4*cm, 0.7*cm, fill=1, stroke=0)
+
+                c.setFillColor(PRETO)
+                texto_pdf(c, f"Questão {n}", y)
+
+                y -= 0.8*cm
+                for s in selecionados:
+                    texto_pdf(c, f"- {s}", y)
+                    y -= 0.4*cm
+
+                corrigido = st.session_state.get(f"corrigido_{n}", "Não")
+                desc = st.session_state.get(f"desc_{n}", "")
+
+                texto_pdf(c, f"Corrigido: {corrigido}", y)
                 y -= 0.4*cm
-            texto_pdf(c, f"Corrigido: {corrigido}", y)
-            y -= 0.4*cm
-            if descricao:
-                texto_pdf(c, f"O que foi feito: {descricao}", y)
-                y -= 0.6*cm
-            c.setStrokeColor(VERDE)
-            c.line(2*cm, y, width - 2*cm, y)
-            y -= 1*cm
-            y = nova_pagina_se_preciso(c, y, height)
+                if desc:
+                    texto_pdf(c, f"O que foi feito: {desc}", y)
+                    y -= 0.6*cm
 
-    c.save()
+                y = nova_pagina(c, y, height)
 
-    with open(pdf_name, "rb") as f:
-        st.download_button("📥 Baixar relatório em PDF", f, file_name=pdf_name, mime="application/pdf")
+        texto_pdf(
+            c,
+            f"Documento gerado em {date.today().strftime('%d/%m/%Y')} por {nome_conferente}",
+            1.5*cm,
+            size=9,
+        )
+
+        c.save()
+
+        with open(pdf_name, "rb") as f:
+            st.download_button(
+                "📥 Baixar relatório em PDF",
+                f,
+                file_name=pdf_name,
+                mime="application/pdf",
+            )
